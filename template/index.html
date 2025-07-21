@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gerador de Keys DEVICEWARE</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, button { font-size: 16px; padding: 5px; }
+        table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #333; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Gerador de Keys DEVICEWARE</h1>
+    <form id="keyForm">
+        <label>Dias de validade:</label>
+        <input type="number" name="dias" min="1" value="30" required />
+        <button type="submit">Gerar Key</button>
+    </form>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <h2>Keys existentes</h2>
+    <table>
+        <thead>
+            <tr><th>Key</th><th>Validade</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for key, info in keys.items() %}
+            <tr>
+                <td>{{ key }}</td>
+                <td>{{ info.expires }}</td>
+                <td>{{ info.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+    document.getElementById('keyForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const dias = formData.get('dias');
+
+        const res = await fetch('/create_key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `dias=${dias}`
+        });
+
+        const data = await res.json();
+        const resultDiv = document.getElementById('result');
+
+        if(data.status === 'ok') {
+            resultDiv.innerHTML = `<p><strong>Key gerada:</strong> ${data.key} <br> <strong>Validade até:</strong> ${data.expires}</p>`;
+            e.target.reset();
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            resultDiv.textContent = 'Erro: ' + (data.message || 'Erro desconhecido');
+        }
+    });
+    </script>
+</body>
+</html>
