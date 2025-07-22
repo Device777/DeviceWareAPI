@@ -45,5 +45,30 @@ def create_key():
     save_keys(keys)
     return jsonify({"status": "ok", "key": new_key, "expires": keys[new_key]['expires']})
 
+@app.route('/validate_key', methods=['POST'])
+def validate_key():
+    key = request.form.get('key')
+    if not key:
+        return jsonify({"status": "error", "message": "Chave não fornecida"}), 400
+    
+    keys = load_keys()
+    key_data = keys.get(key)
+    
+    if not key_data:
+        return jsonify({"status": "error", "message": "Chave inválida"}), 404
+    
+    expires_str = key_data.get("expires")
+    if not expires_str:
+        return jsonify({"status": "error", "message": "Dados da chave inválidos"}), 500
+    
+    expires_date = datetime.strptime(expires_str, "%Y-%m-%d")
+    if expires_date < datetime.now():
+        return jsonify({"status": "error", "message": "Chave expirada"}), 403
+    
+    if key_data.get("status") != "active":
+        return jsonify({"status": "error", "message": "Chave inativa"}), 403
+    
+    return jsonify({"status": "ok", "message": "Chave válida"})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
